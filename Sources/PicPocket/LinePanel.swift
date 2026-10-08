@@ -1,8 +1,6 @@
 import AppKit
 
-/// A transparent strip along the top of the screen that floats over every
-/// app and every Space except full screen ones, never takes focus, and lets clicks pass through
-/// everywhere except over the photos.
+/// A nonactivating screenshot pocket available on every Space, including full screen.
 final class LinePanel: NSPanel {
     init(content: NSView) {
         super.init(contentRect: .zero, styleMask: [.borderless, .nonactivatingPanel],
@@ -10,10 +8,8 @@ final class LinePanel: NSPanel {
         isOpaque = false
         backgroundColor = .clear
         hasShadow = false
-        level = .floating
-        // Every Space except full screen ones: a video or a presentation in full
-        // screen should never get a clothesline across the top.
-        collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle]
+        level = .screenSaver
+        collectionBehavior = [.canJoinAllSpaces, .canJoinAllApplications, .fullScreenAuxiliary, .stationary, .ignoresCycle]
         hidesOnDeactivate = false
         isMovable = false
         becomesKeyOnlyIfNeeded = true
@@ -34,8 +30,8 @@ final class LinePanel: NSPanel {
 
     func placeOnScreen(_ screen: NSScreen? = nil) {
         guard let visible = (screen ?? LinePanel.screenUnderPointer())?.visibleFrame else { return }
-        let target = NSRect(x: visible.minX, y: visible.maxY - Layout.panelHeight,
-                            width: visible.width, height: Layout.panelHeight)
+        let target = NSRect(x: visible.maxX - Layout.panelHeight - 12, y: visible.minY + 12,
+                            width: Layout.panelHeight, height: Layout.panelHeight)
         if frame != target { setFrame(target, display: true) }
     }
 }

@@ -2,15 +2,13 @@ import AppKit
 import Combine
 import os
 
-let log = Logger(subsystem: "app.tendedero.Tendedero", category: "line")
+let log = Logger(subsystem: "app.picpocket.PicPocket", category: "line")
 
 /// One screenshot hanging on the line.
 struct Pegged: Identifiable, Equatable {
     let id = UUID()
     let url: URL
     var thumb: NSImage
-    /// Every photo hangs a little crooked, like on a real line.
-    let tilt = Double.random(in: -2.5...2.5)
     var falling = false
     /// Still flying in from where it was captured; the card waits hidden.
     var flying = false
@@ -25,18 +23,13 @@ struct Pegged: Identifiable, Equatable {
 @MainActor
 final class Line: ObservableObject {
     @Published private(set) var items: [Pegged] = []
-    @Published private(set) var gust = 0
     @Published var copiedID: UUID?
     @Published var draggingID: UUID?
     @Published var pressedID: UUID?
     /// Whether the line has slid down into view.
     @Published var revealed = false
 
-    /// Card frames in window coordinates, reported by the views. The panel
-    /// uses them to only catch clicks over photos and let the rest through.
-    var hitRects: [UUID: CGRect] = [:]
-
-    var maxItems = 8
+    var maxItems = Layout.capacity
 
 
     var soundOn: Bool {
@@ -50,7 +43,6 @@ final class Line: ObservableObject {
 
     init() {
         restore()
-        scheduleGust()
     }
 
     // MARK: Hanging and dropping
@@ -79,17 +71,20 @@ final class Line: ObservableObject {
 
     /// Called just before a photo starts falling, so the fall can be drawn
     /// over the whole screen.
-    var onFall: ((Pegged) -> Void)?
+    var onFall: ((Pegged, @escaping () -> Void) -> Void)?
 
     func drop(_ id: UUID, quietly: Bool = false) {
         guard let i = items.firstIndex(where: { $0.id == id }), !items[i].falling else { return }
-        onFall?(items[i])
         items[i].falling = true
-        hitRects[id] = nil
         save()
         if !quietly { play("Pop", volume: 0.25) }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { [weak self] in
+        let finish: () -> Void = { [weak self] in
             self?.items.removeAll { $0.id == id }
+        }
+        if let onFall {
+            onFall(items[i], finish)
+        } else {
+            finish()
         }
     }
 
@@ -151,7 +146,7 @@ final class Line: ObservableObject {
         contentsOfFile: "/System/Library/Components/CoreAudio.component/Contents/SharedSupport/SystemSounds/dock/drag to trash.aif",
         byReference: true)
 
-    /// Whether the file lives in Tendedero's own folder. Those are discarded
+    /// Whether the file lives in PicPocket's own folder. Those are discarded
     /// to the Trash, or the folder would fill up with forgotten screenshots.
     /// Files anywhere else, like the Desktop, stay where they are.
     func isInInbox(_ id: UUID) -> Bool {
@@ -206,18 +201,6 @@ final class Line: ObservableObject {
     func reveal(_ id: UUID) {
         guard let item = items.first(where: { $0.id == id }) else { return }
         NSWorkspace.shared.activateFileViewerSelecting([item.url])
-    }
-
-    // MARK: Breeze
-
-    /// Every so often a little wind moves the line. It is the detail that
-    /// makes it feel like an object and not a widget.
-    private func scheduleGust() {
-        DispatchQueue.main.asyncAfter(deadline: .now() + .random(in: 7...16)) { [weak self] in
-            guard let self else { return }
-            if !self.items.isEmpty && self.draggingID == nil { self.gust += 1 }
-            self.scheduleGust()
-        }
     }
 
     // MARK: Persistence

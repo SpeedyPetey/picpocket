@@ -2,9 +2,10 @@
 import PackageDescription
 
 let package = Package(
-    name: "Tendedero",
+    name: "PicPocket",
     platforms: [.macOS(.v14)],
     targets: [
-        .executableTarget(name: "Tendedero", path: "Sources/Tendedero")
+        .executableTarget(name: "PicPocket", path: "Sources/PicPocket"),
+        .testTarget(name: "PicPocketTests", dependencies: ["PicPocket"])
     ]
 )

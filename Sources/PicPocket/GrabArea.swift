@@ -55,7 +55,7 @@ struct GrabArea: NSViewRepresentable {
             if inInbox {
                 menu.addItem(ClosureMenuItem(L("Discard", "Descartar")) { line.discard(id) })
             } else {
-                menu.addItem(ClosureMenuItem(L("Take down", "Descolgar")) { line.discard(id) })
+                menu.addItem(ClosureMenuItem(L("Remove from pocket", "Quitar del bolsillo")) { line.discard(id) })
                 menu.addItem(ClosureMenuItem(L("Move to Trash", "Mover a la Papelera")) { line.trash(id) })
             }
             return menu
@@ -65,6 +65,7 @@ struct GrabArea: NSViewRepresentable {
 
 final class GrabView: NSView, NSDraggingSource {
     static var isDragging = false
+    static var isMenuTracking = false
 
     var url: URL?
     var dragImage: NSImage?
@@ -156,6 +157,14 @@ final class GrabView: NSView, NSDraggingSource {
     }
 
     override func rightMouseDown(with event: NSEvent) {
+        let panel = window
+        let previousLevel = panel?.level
+        Self.isMenuTracking = true
+        panel?.level = .floating
+        defer {
+            if let previousLevel { panel?.level = previousLevel }
+            Self.isMenuTracking = false
+        }
         NSMenu.popUpContextMenu(menuProvider(), with: event, for: self)
     }
 
