@@ -6,6 +6,6 @@ let package = Package(
     platforms: [.macOS(.v14)],
     targets: [
         .executableTarget(name: "PicPocket", path: "Sources/PicPocket"),
-        .testTarget(name: "PicPocketTests", dependencies: ["PicPocket"])
+        .testTarget(name: "PicPocketTests", dependencies: ["PicPocket"], resources: [.process("Fixtures")])
     ]
 )

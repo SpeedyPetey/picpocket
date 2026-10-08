@@ -6,20 +6,20 @@ import Foundation
 final class ScreenshotWatcher {
     let folder: URL
     /// On the Desktop we only accept real screenshots, tagged by macOS with an
-    /// extended attribute. In a dedicated folder, any image counts.
+    /// extended attribute. In a dedicated folder, any image or video counts.
     private let onlyTaggedScreenshots: Bool
     private var known = Set<String>()
     private var source: DispatchSourceFileSystemObject?
     private var pending: DispatchWorkItem?
-    private let onNew: (URL) -> Void
+    private let onNew: (URL) -> Bool
     private let onChange: () -> Void
 
-    private static let imageExtensions: Set<String> = ["png", "jpg", "jpeg", "heic", "tif", "tiff", "gif", "webp"]
+    private static let imageExtensions: Set<String> = ["png", "jpg", "jpeg", "heic", "tif", "tiff", "gif", "webp", "mov", "mp4", "m4v"]
 
     static let desktop = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Desktop")
 
     /// Watches the folder macOS saves screenshots to, or a given folder.
-    init(folder: URL? = nil, onNew: @escaping (URL) -> Void, onChange: @escaping () -> Void) {
+    init(folder: URL? = nil, onNew: @escaping (URL) -> Bool, onChange: @escaping () -> Void) {
         self.onNew = onNew
         self.onChange = onChange
         self.folder = folder ?? Self.screenshotFolder()
@@ -50,10 +50,7 @@ final class ScreenshotWatcher {
     func start() {
         let files = listing()
         known = Set(files.filter { creationDate($0) < launchDate }.map(\.path))
-        for url in files where !known.contains(url.path) && isCandidate(url) {
-            onNew(url)
-        }
-        known = Set(files.map(\.path))
+        scan()
         let fd = open(folder.path, O_EVTONLY)
         guard fd >= 0 else {
             NSLog("PicPocket: cannot watch \(folder.path)")
@@ -73,20 +70,26 @@ final class ScreenshotWatcher {
         source = nil
     }
 
-    private func scheduleScan() {
+    private func scheduleScan(delay: TimeInterval = 0.2) {
         pending?.cancel()
         let work = DispatchWorkItem { [weak self] in self?.scan() }
         pending = work
         // macOS writes a hidden temp file and renames it; give it a moment.
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2, execute: work)
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: work)
     }
 
     private func scan() {
         let files = listing()
-        for url in files where !known.contains(url.path) && isCandidate(url) {
-            onNew(url)
+        known.formIntersection(Set(files.map(\.path)))
+        var needsRetry = false
+        for url in files where !known.contains(url.path) {
+            if !isCandidate(url) || onNew(url) {
+                known.insert(url.path)
+            } else {
+                needsRetry = true
+            }
         }
-        known = Set(files.map(\.path))
+        if needsRetry { scheduleScan(delay: 1) }
         onChange()
     }
 
@@ -100,7 +103,7 @@ final class ScreenshotWatcher {
         (try? url.resourceValues(forKeys: [.creationDateKey]).creationDate) ?? .distantPast
     }
 
-    private func isCandidate(_ url: URL) -> Bool {
+    func isCandidate(_ url: URL) -> Bool {
         guard Self.imageExtensions.contains(url.pathExtension.lowercased()) else { return false }
         return onlyTaggedScreenshots ? isScreenCapture(url) : true
     }

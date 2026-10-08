@@ -1,5 +1,6 @@
 import AppKit
 import Combine
+import AVFoundation
 import os
 
 let log = Logger(subsystem: "app.picpocket.PicPocket", category: "line")
@@ -9,6 +10,7 @@ struct Pegged: Identifiable, Equatable {
     let id = UUID()
     let url: URL
     var thumb: NSImage
+    var isVideo: Bool { ["mov", "mp4", "m4v"].contains(url.pathExtension.lowercased()) }
     var falling = false
     /// Still flying in from where it was captured; the card waits hidden.
     var flying = false
@@ -23,6 +25,7 @@ struct Pegged: Identifiable, Equatable {
 @MainActor
 final class Line: ObservableObject {
     @Published private(set) var items: [Pegged] = []
+    @Published var hoveredID: UUID?
     @Published var copiedID: UUID?
     @Published var draggingID: UUID?
     @Published var pressedID: UUID?
@@ -109,7 +112,7 @@ final class Line: ObservableObject {
     func copy(_ id: UUID) {
         guard let item = items.first(where: { $0.id == id }) else { return }
         let entry = NSPasteboardItem()
-        if let png = pngData(item.url) { entry.setData(png, forType: .png) }
+        if !item.isVideo, let png = pngData(item.url) { entry.setData(png, forType: .png) }
         entry.setString(item.url.absoluteString, forType: .fileURL)
         let pb = NSPasteboard.general
         pb.clearContents()
@@ -188,7 +191,7 @@ final class Line: ObservableObject {
     /// Long press: open the photo in the system Markup editor.
     func markup(_ id: UUID) {
         guard let item = items.first(where: { $0.id == id }) else { return }
-        Markup.shared.edit(item.url)
+        if item.isVideo { open(id) } else { Markup.shared.edit(item.url) }
     }
 
     /// After editing, the photo on the line shows the new version.
@@ -234,6 +237,13 @@ final class Line: ObservableObject {
 }
 
 func makeThumbnail(_ url: URL, maxPixels: Int = 480) -> NSImage? {
+    if ["mov", "mp4", "m4v"].contains(url.pathExtension.lowercased()) {
+        let generator = AVAssetImageGenerator(asset: AVURLAsset(url: url))
+        generator.appliesPreferredTrackTransform = true
+        generator.maximumSize = CGSize(width: maxPixels, height: maxPixels)
+        guard let image = try? generator.copyCGImage(at: .zero, actualTime: nil) else { return nil }
+        return NSImage(cgImage: image, size: NSSize(width: image.width, height: image.height))
+    }
     guard let source = CGImageSourceCreateWithURL(url as CFURL, nil) else { return nil }
     let options: [CFString: Any] = [
         kCGImageSourceCreateThumbnailFromImageAlways: true,

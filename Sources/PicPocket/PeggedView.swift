@@ -5,7 +5,7 @@ struct PeggedView: View {
     let item: Pegged
     @ObservedObject var line: Line
 
-    @State private var hovering = false
+    private var hovering: Bool { line.hoveredID == item.id }
 
     private var copied: Bool { line.copiedID == item.id }
     private var dragging: Bool { line.draggingID == item.id }
@@ -65,6 +65,17 @@ struct PeggedView: View {
                     .scaleEffect(hovering ? 1 : 0.6)
                     .allowsHitTesting(false)
             }
+            .overlay(alignment: .bottomTrailing) {
+                if item.isVideo {
+                    Label(L("Video", "Vídeo"), systemImage: "play.fill")
+                        .font(.system(size: 9, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .padding(4)
+                        .background(.black.opacity(0.65), in: Capsule())
+                        .padding(5)
+                        .allowsHitTesting(false)
+                }
+            }
             .overlay(GrabArea(item: item, line: line))
             .overlay(alignment: .bottom) {
                 if copied {
@@ -80,7 +91,7 @@ struct PeggedView: View {
             }
             .animation(.easeOut(duration: 0.18), value: hovering)
             .animation(.easeOut(duration: 0.2), value: copied)
-            .onHover { hovering = $0 }
+
 
     }
 

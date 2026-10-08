@@ -2,15 +2,16 @@
 
 <img src="docs/icon.png" width="128" height="128" alt="PicPocket: screenshots tucked into a blue pocket">
 
-Your latest six screenshots, in a small pocket at the bottom-right corner of your Mac.
+Your latest six screenshots and screen recordings, in a small pocket at the bottom-right corner of your Mac.
 
 A new screenshot opens the pocket briefly. Rest the pointer in the bottom-right
-corner to open it again, including over full-screen apps. It stays open while
+corner to open it again, including over full-screen apps. The trigger covers
+the bottom-right 40 × 40 points and opens after 0.1 seconds. It stays open while
 you interact and hides when you move away.
 
 Free and open source. For macOS 14 and later, on Apple silicon and Intel Macs.
 
-[Download ›](https://github.com/SpeedyPetey/picpocket/releases/latest/download/PicPocket-1.0.1.dmg) · [Build from source ›](https://github.com/SpeedyPetey/picpocket#build-from-source)
+[Download ›](https://github.com/SpeedyPetey/picpocket/releases/latest/download/PicPocket-1.0.2.dmg) · [Build from source ›](https://github.com/SpeedyPetey/picpocket#build-from-source)
 
 ![Illustrated demo: drag a screenshot into another app to share a copy, then click the × to remove a screenshot and trigger its exit animation.](docs/picpocket-demo.gif)
 
@@ -66,6 +67,12 @@ DMG is Developer ID signed and notarized.
 | Right-click | More screenshot actions |
 | Control + Option + T | Show or hide the pocket |
 
+Screen recordings (`.mov`, `.mp4`, and `.m4v`) saved to the watched capture folder
+appear with a preview and a **Video** badge. Click to copy the video file, drag
+it into another app to share it, or double-click to open it in your default player.
+Holding a video also opens it; Markup is available only for images. In Desktop
+watching mode, captures must carry the macOS screen-capture tag.
+
 Removing a screenshot uses a hand animation: left-column photos pull left,
 right-column photos pull right. The remaining photos slide into the gap only
 after the departing image is fully gone. With Reduce Motion enabled, the image
@@ -96,7 +103,7 @@ swift test
 
 Swift, AppKit, and SwiftUI. `scripts/make-icon.swift` draws the app icon;
 `scripts/make-dmg.sh` builds a universal app and packages it as
-`build/PicPocket-1.0.1.dmg` for distribution. When a Developer ID certificate and
+`build/PicPocket-1.0.2.dmg` for distribution. When a Developer ID certificate and
 the `picpocket-notary` keychain profile are configured, the script also signs,
 notarizes, and staples the disk image.
 

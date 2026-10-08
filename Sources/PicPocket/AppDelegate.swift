@@ -103,7 +103,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         safetyWatcher?.stop()
         safetyWatcher = nil
         watcher = ScreenshotWatcher(
-            onNew: { [weak self] url in self?.hangCapture(url) },
+            onNew: { [weak self] url in self?.hangCapture(url) ?? false },
             onChange: { [weak self] in self?.line.prune() })
         watcher.start()
         if Inbox.isEnabled, watcher.folder.standardizedFileURL != ScreenshotWatcher.desktop.standardizedFileURL {
@@ -111,7 +111,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 folder: ScreenshotWatcher.desktop,
                 onNew: { [weak self] url in
                     log.notice("Screenshot landed on the Desktop despite inbox mode: \(url.lastPathComponent, privacy: .public)")
-                    self?.hangCapture(url)
+                    return self?.hangCapture(url) ?? false
                 },
                 onChange: { [weak self] in self?.line.prune() })
             safety.start()
@@ -158,8 +158,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     // MARK: Showing and hiding
 
-    private func hangCapture(_ url: URL) {
-        guard line.hang(url) != nil else { return }
+    private func hangCapture(_ url: URL) -> Bool {
+        if line.items.contains(where: { $0.url == url && !$0.falling }) { return true }
+        guard line.hang(url) != nil else { return false }
         pocketStats.recordCapture()
         // Keep the pocket in place if a screenshot arrives during an interaction.
         if !isRevealed || (!GrabView.isDragging && !GrabView.isMenuTracking && line.pressedID == nil) {
@@ -172,6 +173,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         refresh()
         peekUntil = Date().addingTimeInterval(2.5)
         reveal()
+        return true
     }
 
     /// A hand carries the dismissed screenshot out of the pocket.
@@ -233,6 +235,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         guard on != isRevealed else { return }
         isRevealed = on
         line.revealed = on
+        if !on { line.hoveredID = nil }
         if !on {
             pinned = false
             peekUntil = .distantPast
@@ -266,7 +269,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     /// A brief dwell avoids opening the pocket when just passing the corner.
-    private static let revealDelay: TimeInterval = 0.25
+    private static let revealDelay: TimeInterval = 0.1
 
     /// How long the cursor is away before the pocket hides.
     private static let retractDelay: TimeInterval = 0.5
@@ -296,6 +299,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             return
         }
 
+        let hovered = Layout.hoveredID(in: line.items, at:
+            CGPoint(x: mouse.x - panel.frame.minX, y: panel.frame.maxY - mouse.y))
+        if line.hoveredID != hovered { line.hoveredID = hovered }
         updateMousePassThrough(mouse)
 
         // Include the path between the physical corner and the pocket,

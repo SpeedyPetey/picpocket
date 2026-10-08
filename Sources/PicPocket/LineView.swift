@@ -10,8 +10,19 @@ enum Layout {
                 y: 94 + CGFloat(index / 2) * 108)
     }
 
+    @MainActor static func hoveredID(in items: [Pegged], at point: CGPoint) -> UUID? {
+        for (index, item) in items.reversed().enumerated() where !item.falling && !item.flying {
+            let center = cardCenter(index: index)
+            let size = PeggedView.cardSize(for: item.thumb.size)
+            let frame = CGRect(x: center.x - size.width / 2, y: center.y - size.height / 2,
+                               width: size.width, height: size.height)
+            if frame.contains(point) { return item.id }
+        }
+        return nil
+    }
+
     static func hotZone(in screen: CGRect) -> CGRect {
-        CGRect(x: screen.maxX - 20, y: screen.minY, width: 20, height: 20)
+        CGRect(x: screen.maxX - 40, y: screen.minY, width: 40, height: 40)
     }
 }
 

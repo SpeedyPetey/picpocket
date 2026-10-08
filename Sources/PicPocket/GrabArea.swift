@@ -45,7 +45,9 @@ struct GrabArea: NSViewRepresentable {
             let menu = NSMenu()
             menu.addItem(ClosureMenuItem(L("Copy", "Copiar")) { line.copy(id) })
             menu.addItem(ClosureMenuItem(L("Open", "Abrir")) { line.open(id) })
-            menu.addItem(ClosureMenuItem(L("Markup", "Marcación")) { line.markup(id) })
+            if !item.isVideo {
+                menu.addItem(ClosureMenuItem(L("Markup", "Marcación")) { line.markup(id) })
+            }
             menu.addItem(ClosureMenuItem(L("Show in Finder", "Mostrar en Finder")) { line.reveal(id) })
             let inInbox = line.isInInbox(id)
             if inInbox {
