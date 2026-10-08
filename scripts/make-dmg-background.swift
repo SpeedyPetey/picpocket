@@ -17,17 +17,9 @@ rep.size = NSSize(width: W, height: H)
 NSGraphicsContext.saveGraphicsState()
 NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: rep)
 
-// The same soft sky as the icon, kept light so Finder labels stay legible.
-NSGradient(colors: [color(232, 238, 255), color(242, 236, 252), color(255, 238, 236)],
+// PicPocket blues, kept light so Finder labels stay legible.
+NSGradient(colors: [color(226, 242, 255), color(237, 246, 255), color(249, 252, 255)],
            atLocations: [0, 0.55, 1], colorSpace: .sRGB)!.draw(in: NSRect(x: 0, y: 0, width: W, height: H), angle: -35)
-
-// A thin line hanging across the top, like the app.
-let line = NSBezierPath()
-line.move(to: NSPoint(x: -10, y: H - 34))
-line.curve(to: NSPoint(x: W + 10, y: H - 34), controlPoint1: NSPoint(x: W * 0.3, y: H - 70), controlPoint2: NSPoint(x: W * 0.7, y: H - 70))
-line.lineWidth = 1.4
-color(130, 134, 150, 0.7).setStroke()
-line.stroke()
 
 // Arrow from the app to Applications.
 let arrow = NSBezierPath()

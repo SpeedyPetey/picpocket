@@ -10,7 +10,11 @@ you interact and hides when you move away.
 
 Free and open source. For macOS 14 and later, on Apple silicon and Intel Macs.
 
-[Download ›](https://github.com/SpeedyPetey/picpocket/releases/latest/download/PicPocket-1.0.0.dmg) · [Build from source ›](https://github.com/SpeedyPetey/picpocket#build-from-source)
+[Download ›](https://github.com/SpeedyPetey/picpocket/releases/latest/download/PicPocket-1.0.1.dmg) · [Build from source ›](https://github.com/SpeedyPetey/picpocket#build-from-source)
+
+![Illustrated demo: open the pocket, copy a screenshot, and remove one before the others move into place.](docs/picpocket-demo.gif)
+
+*Illustrated demo of the pocket gestures.*
 
 ## Install
 
@@ -18,9 +22,9 @@ Download the DMG, open it, and drag **PicPocket.app** into **Applications**.
 Launch PicPocket, then rest your pointer in the bottom-right corner to open it.
 Quit any previous running copy before installing an update.
 
-This release is ad hoc signed and is **not notarized by Apple**. macOS may block
-its first launch. If you trust this download, open **System Settings → Privacy
-& Security** and use **Open Anyway** after attempting to launch it.
+PicPocket is signed by **Alongside Studios Inc.** with a Developer ID certificate
+and **notarized by Apple**. The download includes a stapled notarization ticket,
+so the Privacy & Security override is not needed for this release.
 
 ## Build from source
 
@@ -46,8 +50,8 @@ open build/PicPocket.app
 ```
 
 Move PicPocket.app to Applications before enabling **Open at login**.
-Local builds are signed ad hoc unless a Developer ID is configured; this fork
-is not distributed as a notarized release.
+Local builds are signed ad hoc unless a Developer ID is configured. The published
+DMG is Developer ID signed and notarized.
 
 ## Screenshot actions
 
@@ -92,7 +96,7 @@ swift test
 
 Swift, AppKit, and SwiftUI. `scripts/make-icon.swift` draws the app icon;
 `scripts/make-dmg.sh` builds a universal app and packages it as
-`build/PicPocket-1.0.0.dmg` for distribution. When a Developer ID certificate and
+`build/PicPocket-1.0.1.dmg` for distribution. When a Developer ID certificate and
 the `picpocket-notary` keychain profile are configured, the script also signs,
 notarizes, and staples the disk image.
 
@@ -102,3 +106,29 @@ PicPocket is based on [Tendedero by Alejandro Buján](https://github.com/alejand
 The original code is MIT licensed; see [LICENSE](LICENSE). PicPocket uses its
 own name and pocket icon. Older artwork retained in `docs/` depicts the upstream
 app and is not used as PicPocket's app icon.
+
+## Release signing
+
+The upstream app avoids the first-launch security override by using a
+**Developer ID Application** certificate and Apple notarization. Its signing
+identity does not transfer to this fork. PicPocket's packaging script already
+supports the same process, but requires your own Apple Developer credentials.
+
+Install your Developer ID Application certificate and its private key in Keychain,
+then store notarization credentials interactively (do not commit credentials):
+
+```sh
+xcrun notarytool store-credentials picpocket-notary
+scripts/make-dmg.sh
+```
+
+The script detects the certificate, signs with the hardened runtime, submits the
+DMG to Apple, and staples the notarization ticket. Check that notarization and
+Gatekeeper assessment succeed before publishing a notarized release.
+See [Apple's Developer ID guide](https://developer.apple.com/developer-id/).
+
+Regenerate the illustrated README demo with:
+
+```sh
+swift scripts/make-pocket-demo.swift
+```
