@@ -12,7 +12,7 @@ Free and open source. For macOS 14 and later, on Apple silicon and Intel Macs.
 
 [Download ›](https://github.com/SpeedyPetey/picpocket/releases/latest/download/PicPocket-1.0.1.dmg) · [Build from source ›](https://github.com/SpeedyPetey/picpocket#build-from-source)
 
-![Illustrated demo: open the pocket, copy a screenshot, and remove one before the others move into place.](docs/picpocket-demo.gif)
+![Illustrated demo: drag a screenshot into another app to share a copy, then click the × to remove a screenshot and trigger its exit animation.](docs/picpocket-demo.gif)
 
 *Illustrated demo of the pocket gestures.*
 
